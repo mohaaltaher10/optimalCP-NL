@@ -1,0 +1,11 @@
+{
+  "projectId": "optimalcp",
+  "appId": "1:964151804605:web:b9db6743d328f62bd7edd4",
+  "apiKey": "AIzaSyDl6sdG1jEx1t1JHPqlwE53j3JJWS-CL10",
+  "authDomain": "optimalcp.firebaseapp.com",
+  "databaseURL": "https://optimalcp-default-rtdb.firebaseio.com",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "optimalcp.firebasestorage.app",
+  "messagingSenderId": "964151804605",
+  "measurementId": "G-9HP4FZV1RC"
+}
