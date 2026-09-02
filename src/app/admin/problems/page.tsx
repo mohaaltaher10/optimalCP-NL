@@ -66,7 +66,6 @@ import {
   BookOpen,
   Info
 } from "lucide-react";
-import { importCodeforcesProblem } from "@/ai/flows/import-codeforces-problem";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -335,25 +334,48 @@ export default function ProblemsManagementStudio() {
     if (!importUrl.trim().startsWith("http")) return;
     setIsImporting(true);
     try {
-      const result = await importCodeforcesProblem(importUrl);
+      // Parse Codeforces URL format: .../contest/123/problem/A or .../problemset/problem/123/A
+      const url = importUrl.trim();
+      let contestId = "";
+      let problemLetter = "";
+
+      const contestMatch = url.match(/\/contest\/(\d+)\/problem\/([A-Za-z0-9]+)/i);
+      const problemsetMatch = url.match(/\/problemset\/problem\/(\d+)\/([A-Za-z0-9]+)/i);
+
+      if (contestMatch) {
+        contestId = contestMatch[1];
+        problemLetter = contestMatch[2].toUpperCase();
+      } else if (problemsetMatch) {
+        contestId = problemsetMatch[1];
+        problemLetter = problemsetMatch[2].toUpperCase();
+      }
+
+      const problemId = contestId && problemLetter ? `${contestId}${problemLetter}` : `CF_${Date.now()}`;
+
       const data = {
-        id: result.id,
-        title: result.title,
-        sourceUrl: importUrl,
-        category: result.category || "General",
-        difficulty: result.difficulty,
-        rating: result.rating,
-        statement: result.statement,
-        inputFormat: result.inputFormat,
-        outputFormat: result.outputFormat,
-        timeLimit: result.timeLimit || "1.0s",
-        memoryLimit: result.memoryLimit || "256MB",
-        examples: result.examples || [],
-        hints: result.hints
+        id: problemId,
+        title: `Codeforces Problem ${problemId}`,
+        sourceUrl: url,
+        category: "General",
+        difficulty: "Medium",
+        rating: 800,
+        statement: `مسألة مستوردة من رابط Codeforces (${url}). قم بإدخال النص العربي والقيود بالأسفل.`,
+        inputFormat: "الإدخال القياسي كما ورد في المسألة.",
+        outputFormat: "الإخراج القياسي المطلوب.",
+        timeLimit: "1.0s",
+        memoryLimit: "256MB",
+        examples: [{ input: "", output: "", explanation: "" }],
+        hints: {
+          simple: "تلميح بسيط أول...",
+          clear: "تلميح توضيحي ثاني...",
+          comprehensive: "تلميح شامل...",
+          solution: "// الحل النموذجي بلغة C++"
+        }
       };
+
       setJsonContent(JSON.stringify(data, null, 2));
       setSelectedId("NEW_PROBLEM");
-      toast({ title: `تم الاستيراد بنجاح: ${result.id}` });
+      toast({ title: `تم تجهيز مسألة Codeforces المعرف: ${problemId}` });
     } catch (e) {
       console.error("Error importing problem:", e);
       toast({ variant: "destructive", title: "فشل الاستيراد التلقائي" });

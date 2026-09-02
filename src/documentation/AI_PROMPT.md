@@ -18,7 +18,7 @@ You are an expert full-stack developer assistant. Your task is to continue the d
 ## 3. Firebase Configuration
 ```ts
 export const firebaseConfig = {
-  apiKey: "AIzaSyDl6sdG1jEx1t1JHPqlwE53j3JJWS-CL10",
+  apiKey: "YOUR_API_KEY",
   authDomain: "optimalcp.firebaseapp.com",
   projectId: "optimalcp",
   storageBucket: "optimalcp.firebasestorage.app",

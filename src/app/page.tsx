@@ -18,14 +18,19 @@ const Logo = ({ className = "w-8 h-8" }: { className?: string }) => (
   </svg>
 );
 
-const DEFAULT_GOV_HERO_BG = "https://images.unsplash.com/photo-1541872703-74c5e44368f9?q=80&w=2070&auto=format&fit=crop";
+const DEFAULT_GOV_HERO_SLIDES = [
+  "https://images.unsplash.com/photo-1541872703-74c5e44368f9?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=2070&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=2070&auto=format&fit=crop"
+];
 
 export default function Home() {
   const { user } = useUser();
   const { isAdmin, isProblemSetter } = useAdmin();
   const { db, rtdb } = useFirebase();
 
-  const [heroBgUrl, setHeroBgUrl] = useState<string>(DEFAULT_GOV_HERO_BG);
+  const [heroBgUrls, setHeroBgUrls] = useState<string[]>(DEFAULT_GOV_HERO_SLIDES);
+  const [activeSlideIndex, setActiveSlideIndex] = useState<number>(0);
   const [stats, setStats] = useState({
     problems: 0,
     trainees: 0,
@@ -36,16 +41,33 @@ export default function Home() {
 
   useEffect(() => {
     if (!rtdb) return;
-    const heroBgRef = ref(rtdb, 'settings/heroBgUrl');
+    const heroBgRef = ref(rtdb, 'settings/heroBgUrls');
     const unsub = onValue(heroBgRef, (snapshot) => {
-      if (snapshot.exists() && snapshot.val()) {
-        setHeroBgUrl(snapshot.val());
+      if (snapshot.exists() && Array.isArray(snapshot.val()) && snapshot.val().length > 0) {
+        setHeroBgUrls(snapshot.val());
       } else {
-        setHeroBgUrl(DEFAULT_GOV_HERO_BG);
+        // Fallback to single heroBgUrl
+        const singleRef = ref(rtdb, 'settings/heroBgUrl');
+        onValue(singleRef, (singleSnap) => {
+          if (singleSnap.exists() && singleSnap.val()) {
+            setHeroBgUrls([singleSnap.val()]);
+          } else {
+            setHeroBgUrls(DEFAULT_GOV_HERO_SLIDES);
+          }
+        }, { onlyOnce: true });
       }
     });
     return () => unsub();
   }, [rtdb]);
+
+  // Auto carousel timer (5s per slide)
+  useEffect(() => {
+    if (heroBgUrls.length <= 1) return;
+    const timer = setInterval(() => {
+      setActiveSlideIndex(prev => (prev + 1) % heroBgUrls.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [heroBgUrls]);
 
   useEffect(() => {
     async function fetchOptimizedStats() {
@@ -132,24 +154,30 @@ export default function Home() {
       </header>
 
       <main className="flex-1">
-        {/* Official Government Style Hero Section with Customizable Background */}
-        <section className="relative py-24 md:py-32 border-b-2 border-double border-[#8b2626]/30 overflow-hidden min-h-[500px] flex items-center">
-          {/* Background Image Layer */}
-          <div 
-            className="absolute inset-0 bg-cover bg-center transition-all duration-700"
-            style={{ backgroundImage: `url('${heroBgUrl}')` }}
-          />
-          {/* Official Dark Overlay Gradient for Perfect Legibility */}
-          <div className="absolute inset-0 bg-gradient-to-r from-[#1b1510]/95 via-[#231b14]/90 to-[#1b1510]/95 backdrop-blur-[1px]" />
+        {/* Hero Section with Customizable Background Carousel & Dots */}
+        <section className="relative py-24 md:py-32 border-b-2 border-double border-[#8b2626]/30 overflow-hidden min-h-[520px] flex items-center">
+          {/* Background Images Carousel Layer */}
+          {heroBgUrls.map((url, index) => (
+            <div 
+              key={index}
+              className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out ${
+                index === activeSlideIndex ? 'opacity-100 scale-100' : 'opacity-0 pointer-events-none'
+              }`}
+              style={{ backgroundImage: `url('${url}')` }}
+            />
+          ))}
+
+          {/* Refined Balanced Dark Gradient Overlay for Maximum Transparency & Readability */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/55 to-black/75 backdrop-blur-[0.5px]" />
 
           <div className="container mx-auto px-6 relative z-10">
             <div className="max-w-3xl space-y-6 text-right">
-              <h1 className="text-4xl md:text-6xl font-bold text-[#fffdf8] font-serif-ar leading-tight drop-shadow-sm">
+              <h1 className="text-4xl md:text-6xl font-bold text-[#fffdf8] font-serif-ar leading-tight drop-shadow-md">
                 منصة OptimalCP
                 <span className="text-xl md:text-3xl font-medium text-[#e2b874] mt-2 block">لإتقان البرمجة التنافسية</span>
               </h1>
               
-              <p className="text-lg md:text-xl text-[#f0e6d6] font-serif-ar leading-relaxed max-w-2xl drop-shadow-sm">
+              <p className="text-lg md:text-xl text-[#f0e6d6] font-serif-ar leading-relaxed max-w-2xl drop-shadow">
                 مسار تعليمي مدروس ومحكم لتدريب المبرمجين. ادرس مفاهيم الخوارزميات، حل مسائل Codeforces الرسمية، وارتقِ بمستواك التنافسي بثبات وثقة.
               </p>
 
@@ -167,6 +195,24 @@ export default function Home() {
               </div>
             </div>
           </div>
+
+          {/* Carousel Dots Navigation */}
+          {heroBgUrls.length > 1 && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex items-center gap-2 bg-black/40 backdrop-blur-md px-3 py-1.5 rounded-full border border-white/10">
+              {heroBgUrls.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setActiveSlideIndex(idx)}
+                  className={`h-2.5 rounded-full transition-all duration-300 ${
+                    activeSlideIndex === idx 
+                      ? 'w-7 bg-[#e2b874]' 
+                      : 'w-2.5 bg-white/50 hover:bg-white/80'
+                  }`}
+                  aria-label={`Slide ${idx + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </section>
 
         {/* Features Cards Grid */}

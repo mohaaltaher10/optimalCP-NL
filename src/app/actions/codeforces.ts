@@ -17,10 +17,10 @@ const BROWSER_HEADERS = {
   'Sec-Ch-Ua-Platform': '"Windows"'
 };
 
-// إعدادات الطلب الموحدة مع مهلة زمنية 10 ثوانٍ لمنع تعليق المتصفح
+// إعدادات الطلب الموحدة مع مهلة زمنية 3 ثوانٍ لمنع تعليق المتصفح
 const getFetchOptions = () => ({
   headers: BROWSER_HEADERS,
-  signal: AbortSignal.timeout(10000), // يتطلب Node.js 18+
+  signal: AbortSignal.timeout(3000), // يتطلب Node.js 18+
 });
 
 export async function getUpcomingContests() {

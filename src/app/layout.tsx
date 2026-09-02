@@ -1,4 +1,5 @@
 import './globals.css';
+import { AuthProvider } from '@/firebase';
 import { MaintenanceGuard } from '@/components/guards/MaintenanceGuard';
 import { SetupGuard } from '@/components/guards/SetupGuard';
 import { Toaster } from '@/components/ui/toaster';
@@ -71,11 +72,13 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,400;0,700;1,400;1,700&family=Cinzel:wght@600;700;900&family=Tajawal:wght@400;500;700;900&display=swap" rel="stylesheet" />
       </head>
       <body className="antialiased font-body min-h-screen bg-[#fcf9f2] text-[#2c241b]">
-        <MaintenanceGuard>
-          <SetupGuard>
-            {children}
-          </SetupGuard>
-        </MaintenanceGuard>
+        <AuthProvider>
+          <MaintenanceGuard>
+            <SetupGuard>
+              {children}
+            </SetupGuard>
+          </MaintenanceGuard>
+        </AuthProvider>
         <Toaster />
       </body>
     </html>

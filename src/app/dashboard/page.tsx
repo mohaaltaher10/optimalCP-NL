@@ -50,29 +50,55 @@ export default function AdminDashboardPage() {
   const [isFixing, setIsFixing] = useState(false);
   const [fixReport, setFixReport] = useState<string[] | null>(null);
   
-  const [heroBgUrlInput, setHeroBgUrlInput] = useState<string>("");
+  const [heroBgUrlsList, setHeroBgUrlsList] = useState<string[]>([]);
+  const [newBgUrlInput, setNewBgUrlInput] = useState<string>("");
   const [savingHeroBg, setSavingHeroBg] = useState<boolean>(false);
+
+  const DEFAULT_SLIDES = [
+    "https://images.unsplash.com/photo-1541872703-74c5e44368f9?q=80&w=2070&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=2070&auto=format&fit=crop",
+    "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=2070&auto=format&fit=crop"
+  ];
 
   useEffect(() => {
     if (!rtdb) return;
-    get(ref(rtdb, 'settings/heroBgUrl')).then((snap) => {
-      if (snap.exists() && snap.val()) {
-        setHeroBgUrlInput(snap.val());
+    get(ref(rtdb, 'settings/heroBgUrls')).then((snap) => {
+      if (snap.exists() && Array.isArray(snap.val()) && snap.val().length > 0) {
+        setHeroBgUrlsList(snap.val());
       } else {
-        setHeroBgUrlInput("https://images.unsplash.com/photo-1541872703-74c5e44368f9?q=80&w=2070&auto=format&fit=crop");
+        // Fallback to old single heroBgUrl if available
+        get(ref(rtdb, 'settings/heroBgUrl')).then((singleSnap) => {
+          if (singleSnap.exists() && singleSnap.val()) {
+            setHeroBgUrlsList([singleSnap.val()]);
+          } else {
+            setHeroBgUrlsList(DEFAULT_SLIDES);
+          }
+        });
       }
     });
   }, [rtdb]);
+
+  const handleAddBgUrl = () => {
+    if (!newBgUrlInput.trim()) return;
+    setHeroBgUrlsList(prev => [...prev, newBgUrlInput.trim()]);
+    setNewBgUrlInput("");
+  };
+
+  const handleRemoveBgUrl = (index: number) => {
+    setHeroBgUrlsList(prev => prev.filter((_, i) => i !== index));
+  };
 
   const handleSaveHeroBg = async () => {
     if (!rtdb || !isAdmin) return;
     setSavingHeroBg(true);
     try {
-      await setRtdb(ref(rtdb, 'settings/heroBgUrl'), heroBgUrlInput);
-      toast({ title: "تم تحديث صورة خلفية الواجهة الرئيسية بنجاح" });
+      const listToSave = heroBgUrlsList.length > 0 ? heroBgUrlsList : DEFAULT_SLIDES;
+      await setRtdb(ref(rtdb, 'settings/heroBgUrls'), listToSave);
+      await setRtdb(ref(rtdb, 'settings/heroBgUrl'), listToSave[0]);
+      toast({ title: "تم حفظ معرض صور خلفية الواجهة الرئيسية بنجاح 🎉" });
     } catch (e) {
       console.error("Error saving hero bg:", e);
-      toast({ variant: "destructive", title: "فشل حفظ رابط الصورة" });
+      toast({ variant: "destructive", title: "فشل حفظ صور المعرض" });
     } finally {
       setSavingHeroBg(false);
     }
@@ -234,42 +260,73 @@ export default function AdminDashboardPage() {
       <Card className="rounded-sm bg-white border">
         <CardHeader className="border-b py-4 bg-slate-50/50 flex flex-row items-center justify-between">
           <CardTitle className="text-xs font-black flex items-center gap-2 uppercase tracking-widest text-slate-700">
-            <ImageIcon className="w-4 h-4 text-[#8b2626]" /> خلفية الواجهة الرئيسية
+            <ImageIcon className="w-4 h-4 text-[#8b2626]" /> معرض خلفيات الواجهة الرئيسية (Carousel Slides)
           </CardTitle>
+          <Button 
+            onClick={handleSaveHeroBg} 
+            disabled={savingHeroBg}
+            className="bg-[#8b2626] hover:bg-[#731b1b] text-white font-bold h-9 px-5 text-xs gap-2 shrink-0"
+          >
+            {savingHeroBg ? <Loader2 className="animate-spin w-4 h-4" /> : <Save className="w-4 h-4" />} حفظ المعرض
+          </Button>
         </CardHeader>
-        <CardContent className="p-6 space-y-4">
+        <CardContent className="p-6 space-y-6">
           <p className="text-xs text-slate-500 font-medium leading-relaxed">
-            يمكنك تغيير رابط الصورة الخلفية للواجهة الرئيسية أدناه:
+            يمكنك إضافة وإدارة روابط الصور التي تظهر بشكل متحرك مع النقاط التفاعلية (Carousel Dots) في خلفية الصفحة الرئيسية:
           </p>
+
           <div className="flex flex-col sm:flex-row gap-3">
             <Input
               type="url"
-              value={heroBgUrlInput}
-              onChange={(e) => setHeroBgUrlInput(e.target.value)}
-              placeholder="https://images.unsplash.com/..."
+              value={newBgUrlInput}
+              onChange={(e) => setNewBgUrlInput(e.target.value)}
+              placeholder="ضع رابط صورة جديد هنا (https://images.unsplash.com/...)"
               className="flex-1 text-xs font-mono"
               dir="ltr"
             />
             <Button 
-              onClick={handleSaveHeroBg} 
-              disabled={savingHeroBg}
-              className="bg-[#8b2626] hover:bg-[#731b1b] text-white font-bold h-10 px-6 text-xs gap-2 shrink-0"
+              onClick={handleAddBgUrl} 
+              type="button"
+              variant="outline"
+              className="border-primary text-primary font-bold h-10 px-5 text-xs gap-1.5 shrink-0 hover:bg-primary/5"
             >
-              {savingHeroBg ? <Loader2 className="animate-spin w-4 h-4" /> : <Save className="w-4 h-4" />} حفظ الخلفية
+              + إضافة صورة للمعرض
             </Button>
           </div>
 
-          {heroBgUrlInput && (
-            <div className="mt-2 space-y-1">
-              <span className="text-[10px] font-bold text-slate-400">معاينة الصورة الحالية:</span>
-              <div className="h-28 w-full rounded-sm border overflow-hidden relative bg-slate-100">
-                <img src={heroBgUrlInput} alt="Hero Background Preview" className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                  <span className="text-white text-xs font-bold bg-black/70 px-3 py-1 rounded-sm border border-white/20">معاينة التراكب للواجهة الرئيسية</span>
-                </div>
+          <div className="space-y-3">
+            <span className="text-[11px] font-bold text-slate-500 block">
+              الصور المعتمدة حالياً ({heroBgUrlsList.length} صور):
+            </span>
+
+            {heroBgUrlsList.length === 0 ? (
+              <p className="text-xs text-slate-400 italic">لا توجد صور في المعرض. سيتم استخدام الصور الافتراضية.</p>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {heroBgUrlsList.map((url, idx) => (
+                  <div key={idx} className="border rounded-sm p-3 bg-slate-50 relative space-y-2 group">
+                    <div className="h-32 w-full rounded-sm border overflow-hidden relative bg-slate-200">
+                      <img src={url} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
+                      <div className="absolute top-2 right-2 bg-black/80 text-white text-[10px] font-mono font-bold px-2 py-0.5 rounded-sm">
+                        صورة {idx + 1}
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-2 pt-1">
+                      <p className="text-[10px] font-mono text-slate-500 truncate dir-ltr flex-1">{url}</p>
+                      <Button 
+                        onClick={() => handleRemoveBgUrl(idx)} 
+                        variant="ghost" 
+                        size="sm" 
+                        className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 text-[11px] font-bold shrink-0"
+                      >
+                        حذف
+                      </Button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </CardContent>
       </Card>
 
