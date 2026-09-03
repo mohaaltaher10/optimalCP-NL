@@ -24,12 +24,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ARAB_COUNTRIES } from "@/lib/countries";
 
 const Logo = ({ className = "w-10 h-10" }: { className?: string }) => (
-  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="100" rx="5" fill="#1e40af"/>
-    <path d="M30 40L15 50L30 60" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M70 40L85 50L70 60" stroke="white" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M40 70L60 30" stroke="white" strokeWidth="6" strokeLinecap="round"/>
-  </svg>
+  <img src="/icon.svg" alt="OptimalCP" className={className} />
 );
 
 const getAuthErrorMessage = (code: string) => {
