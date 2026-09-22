@@ -10,7 +10,12 @@ import { collection, getCountFromServer, query, where } from 'firebase/firestore
 import { ref, onValue } from 'firebase/database';
 
 const Logo = ({ className = "w-8 h-8" }: { className?: string }) => (
-  <img src="/icon.svg" alt="OptimalCP" className={className} />
+  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
+    <rect width="100" height="100" rx="20" fill="#8b2626"/>
+    <path d="M30 38L15 50L30 62" stroke="#e2b874" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M70 38L85 50L70 62" stroke="#e2b874" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M42 70L58 30" stroke="#ffffff" strokeWidth="7" strokeLinecap="round"/>
+  </svg>
 );
 
 const DEFAULT_GOV_HERO_SLIDES = [
