@@ -30,6 +30,8 @@ export default function OnboardingSetupPage() {
   const [formData, setFormData] = useState({
     username: "",
     country: "",
+    gender: "male" as "male" | "female",
+    age: "18",
     cfHandle: ""
   });
   
@@ -49,13 +51,15 @@ export default function OnboardingSetupPage() {
       if (userDoc.exists()) {
         const data = userDoc.data();
         // إذا كان لديه اسم مستخدم ودولة، فهو جاهز
-        if (data.username && data.username !== 'مبرمج_طموح' && data.country) {
+        if (data.username && data.username !== 'مبرمج_طموح' && data.country && data.gender && data.age) {
           router.push("/roadmap");
           return;
         }
         setFormData({
           username: data.username === 'مبرمج_طموح' ? "" : (data.username || ""),
           country: data.country || "",
+          gender: data.gender || "male",
+          age: data.age ? String(data.age) : "18",
           cfHandle: data.cfHandle || ""
         });
       }
@@ -75,6 +79,12 @@ export default function OnboardingSetupPage() {
       return;
     }
 
+    const parsedAge = parseInt(formData.age, 10);
+    if (isNaN(parsedAge) || parsedAge < 6 || parsedAge > 100) {
+      toast({ variant: "destructive", title: "عمر غير صالح", description: "يرجى كتابة عمر صحيح بين 6 و 100 سنة." });
+      return;
+    }
+
     setIsSaving(true);
     setUsernameError("");
     try {
@@ -90,6 +100,8 @@ export default function OnboardingSetupPage() {
       const updates = { 
         username: formData.username,
         country: formData.country,
+        gender: formData.gender,
+        age: parsedAge,
         cfHandle: formData.cfHandle,
         lastActivity: new Date().toISOString()
       };
@@ -137,6 +149,30 @@ export default function OnboardingSetupPage() {
                     className={cn("h-12 font-black rounded-sm border-2", usernameError ? "border-red-200 focus:border-red-500" : "focus:border-primary")} 
                 />
                 {usernameError && <p className="text-[10px] font-bold text-red-500">{usernameError}</p>}
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-2">
+                  <Label className="font-black text-[10px] text-slate-400 uppercase">الجنس</Label>
+                  <Select value={formData.gender} onValueChange={(v: "male" | "female") => setFormData({...formData, gender: v})}>
+                    <SelectTrigger className="h-12 font-bold" dir="rtl"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male" className="text-right">ذكر 👨</SelectItem>
+                      <SelectItem value="female" className="text-right">أنثى 👩</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label className="font-black text-[10px] text-slate-400 uppercase">العمر (بالسنوات)</Label>
+                  <Input 
+                    type="number"
+                    min={6}
+                    max={100}
+                    value={formData.age}
+                    onChange={(e) => setFormData({...formData, age: e.target.value})}
+                    className="h-12 font-bold rounded-sm border-2"
+                  />
+                </div>
               </div>
 
               <div className="space-y-2">

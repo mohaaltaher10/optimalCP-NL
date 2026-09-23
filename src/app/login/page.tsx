@@ -44,7 +44,7 @@ const getAuthErrorMessage = (code: string) => {
     case 'auth/popup-blocked': return "تم حظر النافذة المنبثقة من قبل المتصفح. يرجى السماح بالنوافذ المنبثقة للموقع والمحاولة مجدداً.";
     case 'auth/cancelled-popup-request': return "تم إلغاء عملية الدخول.";
     case 'auth/network-request-failed': return "فشل الاتصال بالخادم. تحقق من اتصال الإنترنت.";
-    case 'auth/too-many-requests': return "محاولات كثيرة خاطئة. تم حظر الدخول مؤقتاً لحماية الحساب.";
+    case 'auth/too-many-requests': return "محاولات كثيرة خاطئة. تم حظر الدخول مؤقتاً .";
     default: return "حدث خطأ في العملية. يرجى التأكد من صحة البريد الإلكتروني والمحاولة لاحقاً.";
   }
 };
@@ -59,13 +59,24 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [country, setCountry] = useState("LY");
+  const [gender, setGender] = useState<"male" | "female">("male");
+  const [age, setAge] = useState<string>("18");
   
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isRegister, setIsRegister] = useState(false);
   const [verificationSent, setVerificationSent] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setInterval(() => {
+      setResendCooldown((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -138,7 +149,7 @@ export default function LoginPage() {
     setSuccessMessage("");
     try {
       await sendPasswordResetEmail(auth, email);
-      setSuccessMessage(`تم إرسال رابط إعادة تعيين كلمة المرور إلى البريد الإلكتروني: (${email}). يرجى تفقد صندوق الوارد أو البريد المهمل (Spam).`);
+      setSuccessMessage(`تم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني: (${email}). يرجى تفقد صندوق الوارد أو البريد المهمل (Spam).`);
       toast({
         title: "تم إرسال الرابط بنجاح",
         description: "تفقد بريدك الإلكتروني لإعادة تعيين كلمة المرور."
@@ -146,6 +157,21 @@ export default function LoginPage() {
     } catch (err: any) {
       console.error("Reset password error:", err);
       setError(err.code ? getAuthErrorMessage(err.code) : (err.message || "حدث خطأ أثناء إرسال رابط استعادة كلمة المرور"));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendEmail = async () => {
+    if (resendCooldown > 0 || !auth.currentUser) return;
+    setIsLoading(true);
+    try {
+      await sendEmailVerification(auth.currentUser);
+      toast({ title: "تم إرسال رابط التفعيل مجدداً" });
+      setResendCooldown(60);
+    } catch (e: any) {
+      console.error("Resend verify error:", e);
+      toast({ variant: "destructive", title: "فشل الإرسال، حاول بعد قليل" });
     } finally {
       setIsLoading(false);
     }
@@ -167,17 +193,24 @@ export default function LoginPage() {
         if (password !== confirmPassword) throw new Error("كلمات المرور غير متطابقة");
         const usernameRef = ref(rtdb, `usernames/${username.toLowerCase()}`);
         const snap = await get(usernameRef);
-        if (snap.exists()) throw new Error("اسم المستخدم محجوز مسبقاً.");
+        if (snap.exists()) throw new Error("اسم المستخدم محجوز");
 
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const newUser = userCredential.user;
         await updateProfile(newUser, { displayName: username });
         
+        const parsedAge = parseInt(age, 10);
+        if (isNaN(parsedAge) || parsedAge < 6 || parsedAge > 100) {
+          throw new Error("يرجى إدخال عمر صحيح بين 6 و 100 سنة.");
+        }
+
         const userData = {
           uid: newUser.uid,
           username: username,
           email: email,
           country: country,
+          gender: gender,
+          age: parsedAge,
           createdAt: new Date().toISOString(),
           xp: 0,
           solved: 0,
@@ -217,10 +250,20 @@ export default function LoginPage() {
           <div className="grid gap-3 pt-4">
             <Button onClick={handleManualVerifyCheck} disabled={isLoading} className="w-full h-12 font-black bg-primary gap-2 rounded-sm shadow-none">
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCcw className="w-4 h-4" />}
-              لقد قمت بالتفعيل، تابع الآن
+              لقد قمت بالتفعيل
+            </Button>
+            <Button 
+              onClick={handleResendEmail} 
+              disabled={isLoading || resendCooldown > 0} 
+              variant="outline" 
+              className="w-full h-11 font-bold rounded-sm border-2 gap-2"
+            >
+              {resendCooldown > 0 
+                ? `إعادة الإرسال بعد (${resendCooldown}) ثانية` 
+                : "إعادة إرسال رابط التفعيل"}
             </Button>
             <Button onClick={handleAbortVerification} variant="ghost" className="w-full h-10 font-bold text-slate-400">
-              العودة لتغيير الحساب
+              تغيير الحساب
             </Button>
           </div>
         </Card>
@@ -234,7 +277,7 @@ export default function LoginPage() {
         <div className="absolute top-0 left-0 w-full h-1 bg-primary" />
         <CardHeader className="text-center space-y-1">
           <Link href="/" className="inline-flex items-center justify-center gap-2 mb-2"><Logo /><span className="text-2xl font-black text-slate-900">OptimalCP</span></Link>
-          <CardTitle className="text-2xl font-black text-slate-900">{isRegister ? "إنشاء حساب مبرمج" : "تسجيل الدخول"}</CardTitle>
+          <CardTitle className="text-2xl font-black text-slate-900">{isRegister ? "إنشاء حساب" : "تسجيل الدخول"}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <form onSubmit={handleEmailAuth} className="space-y-4">
@@ -243,6 +286,30 @@ export default function LoginPage() {
                 <div className="space-y-1 text-right">
                   <Label className="font-black text-[10px] text-slate-400 uppercase">اسم المستخدم</Label>
                   <Input placeholder="code_master" value={username} onChange={(e) => setUsername(e.target.value)} required className="h-11 font-bold rounded-sm border-2" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1 text-right">
+                    <Label className="font-black text-[10px] text-slate-400 uppercase">الجنس</Label>
+                    <Select value={gender} onValueChange={(v: "male" | "female") => setGender(v)}>
+                      <SelectTrigger className="h-11 font-bold rounded-sm border-2" dir="rtl"><SelectValue /></SelectTrigger>
+                      <SelectContent align="end" className="rounded-sm">
+                        <SelectItem value="male" className="text-right">ذكر 👨</SelectItem>
+                        <SelectItem value="female" className="text-right">أنثى 👩</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1 text-right">
+                    <Label className="font-black text-[10px] text-slate-400 uppercase">العمر (بالسنوات)</Label>
+                    <Input 
+                      type="number" 
+                      min={6} 
+                      max={100} 
+                      value={age} 
+                      onChange={(e) => setAge(e.target.value)} 
+                      required 
+                      className="h-11 font-bold rounded-sm border-2" 
+                    />
+                  </div>
                 </div>
                 <div className="space-y-1 text-right">
                   <Label className="font-black text-[10px] text-slate-400 uppercase">الدولة</Label>
@@ -284,7 +351,7 @@ export default function LoginPage() {
             {error && <div className="p-3 rounded-sm bg-red-50 text-red-600 text-[11px] font-black text-right border border-red-100 flex items-start gap-2 leading-relaxed animate-in fade-in"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><span>{error}</span></div>}
             {successMessage && <div className="p-3 rounded-sm bg-emerald-50 text-emerald-700 text-[11px] font-black text-right border border-emerald-200 flex items-start gap-2 leading-relaxed animate-in fade-in"><CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" /><span>{successMessage}</span></div>}
             <Button className="w-full font-black h-12 bg-primary hover:bg-primary/90 rounded-sm text-base shadow-none gap-2" disabled={isLoading} type="submit">
-              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isRegister ? <><ArrowRight className="w-4 h-4" /> إنشاء حساب</> : "دخول المنصة")}
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (isRegister ? <><ArrowRight className="w-4 h-4" /> إنشاء حساب</> : "دخول")}
             </Button>
           </form>
           <div className="relative"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-[10px] uppercase"><span className="bg-white px-3 text-slate-400 font-black">أو</span></div></div>

@@ -19,9 +19,7 @@ const Logo = ({ className = "w-8 h-8" }: { className?: string }) => (
 );
 
 const DEFAULT_GOV_HERO_SLIDES = [
-  "https://images.unsplash.com/photo-1541872703-74c5e44368f9?q=80&w=2070&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?q=80&w=2070&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?q=80&w=2070&auto=format&fit=crop"
+  
 ];
 
 export default function Home() {
@@ -178,7 +176,7 @@ export default function Home() {
               </h1>
               
               <p className="text-lg md:text-xl text-[#f0e6d6] font-serif-ar leading-relaxed max-w-2xl drop-shadow">
-                مسار تعليمي مدروس ومحكم لتدريب المبرمجين. ادرس مفاهيم الخوارزميات، حل مسائل Codeforces الرسمية، وارتقِ بمستواك التنافسي بثبات وثقة.
+                مسار تعليمي مدروس ومحكم لتدريب المبرمجين. ادرس مفاهيم الخوارزميات، حل مسائل Codeforces الرسمية، وارتقِ بمستواك بثبات وثقة.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-4 pt-2">
@@ -231,7 +229,7 @@ export default function Home() {
                   <Code2 className="w-7 h-7" />
                 </div>
                 <h3 className="text-2xl font-bold font-serif-ar text-[#2c241b]">تحكيم Codeforces</h3>
-                <p className="text-base text-[#5a4c3e] font-serif-ar leading-relaxed">ربط مباشر مع منصة Codeforces العالمية لضمان صحة ومصداقية الحلول المقدمة.</p>
+                <p className="text-base text-[#5a4c3e] font-serif-ar leading-relaxed">ربط مباشر مع منصة Codeforces لضمان صحة ومصداقية الحلول المقدمة.</p>
              </div>
              
              <div className="p-8 border-2 border-[#e2d6c3] bg-[#fffdf8] rounded-sm space-y-4 hover:border-[#8b2626] transition-all shadow-sm">
@@ -248,7 +246,7 @@ export default function Home() {
         <section className="py-20 bg-[#2b231a] text-[#f4ebe0] border-y-4 border-double border-[#8b2626]">
           <div className="container mx-auto px-6 text-center space-y-10">
             <div className="space-y-2">
-              <h2 className="text-3xl md:text-4xl font-bold font-serif-ar text-[#fffdf8]">إحصائيات المنصة الحية</h2>
+              <h2 className="text-3xl md:text-4xl font-bold font-serif-ar text-[#fffdf8]">إحصائيات المنصة</h2>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">

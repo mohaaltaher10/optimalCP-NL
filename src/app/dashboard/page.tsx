@@ -41,6 +41,8 @@ export default function AdminDashboardPage() {
     totalUsers: 0, 
     totalProblems: 0, 
     usersByCountry: [] as any[],
+    genderData: [] as any[],
+    ageGroupData: [] as any[],
     healthPercent: 0,
     totalGlobalSolved: 0,
     avgSolvedPerUser: 0,
@@ -123,19 +125,36 @@ export default function AdminDashboardPage() {
       let totalSolved = 0;
       let engagedUsers = 0;
       const countryData: Record<string, number> = {};
+      let maleCount = 0;
+      let femaleCount = 0;
+      const ageGroups: Record<string, number> = { "أقل من 18": 0, "18-22": 0, "23-30": 0, "أكثر من 30": 0 };
 
       usersSnap.docs.forEach(d => {
         const data = d.data();
         totalSolved += (data.solved || 0);
         if ((data.xp || 0) > 0) engagedUsers++;
-        const c = data.country || "Unknown";
+        const c = data.country || "غير محدد";
         countryData[c] = (countryData[c] || 0) + 1;
+
+        if (data.gender === "female") femaleCount++;
+        else maleCount++;
+
+        const userAge = data.age ? Number(data.age) : 18;
+        if (userAge < 18) ageGroups["أقل من 18"]++;
+        else if (userAge <= 22) ageGroups["18-22"]++;
+        else if (userAge <= 30) ageGroups["23-30"]++;
+        else ageGroups["أكثر من 30"]++;
       });
 
       setStats({
         totalUsers,
         totalProblems,
         usersByCountry: Object.entries(countryData).map(([name, value]) => ({ name, value })),
+        genderData: [
+          { name: "ذكور 👨", value: maleCount },
+          { name: "إناث 👩", value: femaleCount }
+        ],
+        ageGroupData: Object.entries(ageGroups).map(([name, value]) => ({ name, value })),
         healthPercent: totalUsers > 0 ? Math.round((engagedUsers / usersSnap.docs.length) * 100) : 0,
         totalGlobalSolved: totalSolved,
         avgSolvedPerUser: totalUsers > 0 ? parseFloat((totalSolved / totalUsers).toFixed(1)) : 0,
@@ -358,6 +377,47 @@ export default function AdminDashboardPage() {
                   <div className="p-3 bg-slate-50 border text-center rounded-sm"><span className="block text-[10px] font-black uppercase text-slate-400">إجمالي الحلول</span><span className="font-black text-emerald-600 text-lg">{stats.totalGlobalSolved}</span></div>
                   <div className="p-3 bg-slate-50 border text-center rounded-sm"><span className="block text-[10px] font-black uppercase text-slate-400">متوسط الإنجاز</span><span className="font-black text-blue-600 text-lg">{stats.avgSolvedPerUser}</span></div>
                </div>
+            </CardContent>
+         </Card>
+      </div>
+
+      {/* Demographics: Gender & Age Analytics */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+         <Card className="rounded-sm bg-white border">
+            <CardHeader className="border-b py-4 bg-slate-50/50">
+               <CardTitle className="text-xs font-black flex items-center gap-2 uppercase tracking-widest text-slate-500">
+                  <PieChart className="w-4 h-4 text-purple-600" /> توزيع المبرمجين حسب الجنس (ذكور / إناث)
+               </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 h-[260px] flex items-center justify-center">
+               <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.genderData} layout="vertical">
+                     <XAxis type="number" />
+                     <YAxis dataKey="name" type="category" tick={{fontSize: 12}} width={90} />
+                     <Tooltip />
+                     <Bar dataKey="value" fill="#8b2626" radius={[0, 4, 4, 0]}>
+                        {stats.genderData.map((_, i) => <Cell key={i} fill={i === 0 ? '#1e40af' : '#ec4899'} />)}
+                     </Bar>
+                  </BarChart>
+               </ResponsiveContainer>
+            </CardContent>
+         </Card>
+
+         <Card className="rounded-sm bg-white border">
+            <CardHeader className="border-b py-4 bg-slate-50/50">
+               <CardTitle className="text-xs font-black flex items-center gap-2 uppercase tracking-widest text-slate-500">
+                  <BarChart3 className="w-4 h-4 text-indigo-600" /> توزيع الفئات العمرية للمبرمجين
+               </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 h-[260px]">
+               <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={stats.ageGroupData}>
+                     <XAxis dataKey="name" tick={{fontSize: 11}} />
+                     <YAxis />
+                     <Tooltip />
+                     <Bar dataKey="value" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+               </ResponsiveContainer>
             </CardContent>
          </Card>
       </div>
