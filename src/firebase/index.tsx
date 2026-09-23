@@ -12,6 +12,7 @@ import {
 import { getDatabase, ref, onValue, set as rtdbSet } from 'firebase/database';
 import { 
   getFirestore, 
+  initializeFirestore,
   doc, 
   setDoc, 
   onSnapshot
@@ -26,8 +27,8 @@ const ADMIN_EMAILS = ['artiateech@gmail.com', 'artiatechstudio@gmail.com'];
 const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = (!firebaseConfig.firestoreDatabaseId || firebaseConfig.firestoreDatabaseId === '(default)')
-  ? getFirestore(app)
-  : getFirestore(app, firebaseConfig.firestoreDatabaseId);
+  ? initializeFirestore(app, { experimentalAutoDetectLongPolling: true })
+  : initializeFirestore(app, { experimentalAutoDetectLongPolling: true }, firebaseConfig.firestoreDatabaseId);
 const rtdb = getDatabase(app);
 
 // تصدير الكائنات الجاهزة للاستخدام المباشر

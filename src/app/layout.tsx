@@ -3,6 +3,7 @@ import { AuthProvider } from '@/firebase';
 import { MaintenanceGuard } from '@/components/guards/MaintenanceGuard';
 import { SetupGuard } from '@/components/guards/SetupGuard';
 import { Toaster } from '@/components/ui/toaster';
+import { GlobalNavigationLoader } from '@/components/ui/navigation-loader';
 import type { Metadata, Viewport } from 'next';
 
 export const viewport: Viewport = {
@@ -73,6 +74,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased font-body min-h-screen bg-[#fcf9f2] text-[#2c241b]">
         <AuthProvider>
+          <GlobalNavigationLoader />
           <MaintenanceGuard>
             <SetupGuard>
               {children}

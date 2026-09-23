@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Chrome, Eye, EyeOff, Loader2, MailCheck, RefreshCcw, AlertCircle, ArrowRight, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
@@ -22,15 +23,7 @@ import { ref, get, set } from "firebase/database";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { ARAB_COUNTRIES } from "@/lib/countries";
-
-const Logo = ({ className = "w-10 h-10" }: { className?: string }) => (
-  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="100" rx="20" fill="#8b2626"/>
-    <path d="M30 38L15 50L30 62" stroke="#e2b874" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M70 38L85 50L70 62" stroke="#e2b874" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M42 70L58 30" stroke="#ffffff" strokeWidth="7" strokeLinecap="round"/>
-  </svg>
-);
+import { Logo } from "@/components/ui/logo";
 
 const getAuthErrorMessage = (code: string) => {
   switch (code) {
@@ -61,6 +54,7 @@ export default function LoginPage() {
   const [country, setCountry] = useState("LY");
   const [gender, setGender] = useState<"male" | "female">("male");
   const [age, setAge] = useState<string>("18");
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
   
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -190,6 +184,7 @@ export default function LoginPage() {
 
     try {
       if (isRegister) {
+        if (!acceptedTerms) throw new Error("يرجى الموافقة على شروط الاستخدام وسياسة الخصوصية للمتابعة.");
         if (password !== confirmPassword) throw new Error("كلمات المرور غير متطابقة");
         const usernameRef = ref(rtdb, `usernames/${username.toLowerCase()}`);
         const snap = await get(usernameRef);
@@ -276,7 +271,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-md border rounded-sm shadow-none bg-white overflow-hidden relative">
         <div className="absolute top-0 left-0 w-full h-1 bg-primary" />
         <CardHeader className="text-center space-y-1">
-          <Link href="/" className="inline-flex items-center justify-center gap-2 mb-2"><Logo /><span className="text-2xl font-black text-slate-900">OptimalCP</span></Link>
+          <Link href="/" className="inline-flex items-center justify-center gap-2 mb-2"><Logo variant="blue" className="w-10 h-10" /><span className="text-2xl font-black text-slate-900">OptimalCP</span></Link>
           <CardTitle className="text-2xl font-black text-slate-900">{isRegister ? "إنشاء حساب" : "تسجيل الدخول"}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -343,10 +338,35 @@ export default function LoginPage() {
               </div>
             </div>
             {isRegister && (
-              <div className="space-y-1 text-right">
-                <Label className="font-black text-[10px] text-slate-400 uppercase">تأكيد كلمة المرور</Label>
-                <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required dir="ltr" className="h-11 font-bold pl-10 rounded-sm border-2" />
-              </div>
+              <>
+                <div className="space-y-1 text-right">
+                  <Label className="font-black text-[10px] text-slate-400 uppercase">تأكيد كلمة المرور</Label>
+                  <Input type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required dir="ltr" className="h-11 font-bold pl-10 rounded-sm border-2" />
+                </div>
+                
+                <div className="flex items-start gap-2.5 pt-2 text-right">
+                  <Checkbox 
+                    id="terms" 
+                    checked={acceptedTerms} 
+                    onCheckedChange={(checked) => setAcceptedTerms(checked === true)}
+                    className="mt-1 border-2 border-slate-300"
+                  />
+                  <Label htmlFor="terms" className="text-xs font-bold leading-relaxed text-slate-600 cursor-pointer select-none">
+                    أوافق على{" "}
+                    <Link href="/terms" target="_blank" className="text-primary font-black underline hover:text-primary/80">
+                      شروط الاستخدام
+                    </Link>
+                    ،{" "}
+                    <Link href="/privacy" target="_blank" className="text-primary font-black underline hover:text-primary/80">
+                      سياسة الخصوصية
+                    </Link>
+                    ، و
+                    <Link href="/licenses" target="_blank" className="text-primary font-black underline hover:text-primary/80">
+                      التراخيص
+                    </Link>
+                  </Label>
+                </div>
+              </>
             )}
             {error && <div className="p-3 rounded-sm bg-red-50 text-red-600 text-[11px] font-black text-right border border-red-100 flex items-start gap-2 leading-relaxed animate-in fade-in"><AlertCircle className="w-4 h-4 shrink-0 mt-0.5" /><span>{error}</span></div>}
             {successMessage && <div className="p-3 rounded-sm bg-emerald-50 text-emerald-700 text-[11px] font-black text-right border border-emerald-200 flex items-start gap-2 leading-relaxed animate-in fade-in"><CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5 text-emerald-600" /><span>{successMessage}</span></div>}

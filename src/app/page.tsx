@@ -3,20 +3,13 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { useUser, useAdmin, useFirebase, logout } from '@/firebase';
-import { LayoutDashboard, Code2, Trophy, Map, Database, MessageSquare, LogIn, Loader2, Users, Activity, ScrollText, Award, LogOut } from 'lucide-react';
+import { LayoutDashboard, Code2, Trophy, Map, Database, MessageSquare, LogIn, Loader2, Users, Activity, ScrollText, Award, LogOut, Menu } from 'lucide-react';
 import { Footer } from '@/components/layout/Footer';
 import { useEffect, useState } from 'react';
 import { collection, getCountFromServer, query, where } from 'firebase/firestore';
 import { ref, onValue } from 'firebase/database';
-
-const Logo = ({ className = "w-8 h-8" }: { className?: string }) => (
-  <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect width="100" height="100" rx="20" fill="#8b2626"/>
-    <path d="M30 38L15 50L30 62" stroke="#e2b874" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M70 38L85 50L70 62" stroke="#e2b874" strokeWidth="8" strokeLinecap="round" strokeLinejoin="round"/>
-    <path d="M42 70L58 30" stroke="#ffffff" strokeWidth="7" strokeLinecap="round"/>
-  </svg>
-);
+import { Logo } from '@/components/ui/logo';
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 const DEFAULT_GOV_HERO_SLIDES = [
   
@@ -103,9 +96,9 @@ export default function Home() {
     <div className="flex flex-col min-h-screen bg-[#fcf9f2] text-[#2c241b]" dir="rtl">
       <header className="border-b-2 border-double border-[#8b2626]/30 bg-[#fbf7ee] sticky top-0 z-50 w-full shadow-sm">
         <div className="container mx-auto px-4 md:px-6 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 lg:gap-8 flex-1 min-w-0">
+          <div className="flex items-center gap-3 lg:gap-8 min-w-0">
             <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-              <Logo className="transition-transform group-hover:scale-105 shadow-sm" />
+              <Logo variant="blue" className="w-8 h-8 transition-transform group-hover:scale-105 shadow-sm" />
               <span className="text-xl md:text-2xl font-bold font-serif-ar text-[#8b2626] tracking-tight whitespace-nowrap">OptimalCP</span>
             </Link>
             <nav className="hidden lg:flex items-center gap-4 xl:gap-6 font-serif-ar">
@@ -116,7 +109,8 @@ export default function Home() {
             </nav>
           </div>
           
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Desktop Right Actions */}
+          <div className="hidden lg:flex items-center gap-2 sm:gap-3 shrink-0">
             {!user ? (
               <Link href="/login">
                 <Button className="font-bold rounded-sm h-10 px-5 text-xs bg-[#8b2626] hover:bg-[#731b1b] text-[#fffdf8] border border-[#731b1b] gap-2 font-serif-ar whitespace-nowrap shadow-sm">
@@ -147,6 +141,78 @@ export default function Home() {
                 </Button>
               </div>
             )}
+          </div>
+
+          {/* Mobile Drawer Navigation Menu */}
+          <div className="lg:hidden flex items-center">
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon" className="h-10 w-10 border-[#8b2626]/30 text-[#8b2626] bg-[#f4ebe0] hover:bg-[#8b2626] hover:text-white">
+                  <Menu className="w-5 h-5" />
+                  <span className="sr-only">قائمة الملاحة</span>
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="bg-[#fbf7ee] text-[#2c241b] border-r border-r-[#8b2626]/30 p-6 flex flex-col justify-between" dir="rtl">
+                <div className="space-y-6">
+                  <SheetHeader className="text-right border-b border-[#8b2626]/20 pb-4">
+                    <SheetTitle className="flex items-center gap-3">
+                      <Logo variant="blue" className="w-8 h-8" />
+                      <span className="text-2xl font-bold font-serif-ar text-[#8b2626]">OptimalCP</span>
+                    </SheetTitle>
+                  </SheetHeader>
+
+                  <nav className="flex flex-col gap-3 font-serif-ar pt-2">
+                    {user && (
+                      <Link href="/roadmap" className="flex items-center gap-3 p-3 rounded-sm font-bold text-sm text-[#5a4c3e] hover:bg-[#8b2626]/10 hover:text-[#8b2626]">
+                        <Map className="w-4 h-4 text-[#8b2626]" /> خارطة الطريق
+                      </Link>
+                    )}
+                    <Link href="/problems" className="flex items-center gap-3 p-3 rounded-sm font-bold text-sm text-[#5a4c3e] hover:bg-[#8b2626]/10 hover:text-[#8b2626]">
+                      <Code2 className="w-4 h-4 text-[#8b2626]" /> بنك المسائل
+                    </Link>
+                    <Link href="/forum" className="flex items-center gap-3 p-3 rounded-sm font-bold text-sm text-[#5a4c3e] hover:bg-[#8b2626]/10 hover:text-[#8b2626]">
+                      <MessageSquare className="w-4 h-4 text-[#8b2626]" /> منتدى النقاش
+                    </Link>
+                    <Link href="/leaderboard" className="flex items-center gap-3 p-3 rounded-sm font-bold text-sm text-[#5a4c3e] hover:bg-[#8b2626]/10 hover:text-[#8b2626]">
+                      <Trophy className="w-4 h-4 text-[#8b2626]" /> لوحة الشرف
+                    </Link>
+                  </nav>
+                </div>
+
+                <div className="border-t border-[#8b2626]/20 pt-4 space-y-3">
+                  {!user ? (
+                    <Link href="/login" className="block w-full">
+                      <Button className="w-full font-bold h-12 text-sm bg-[#8b2626] hover:bg-[#731b1b] text-[#fffdf8] gap-2 font-serif-ar">
+                        <LogIn className="w-4 h-4" /> تسجيل الدخول
+                      </Button>
+                    </Link>
+                  ) : (
+                    <div className="space-y-2">
+                      {(isAdmin || isProblemSetter) ? (
+                        <Link href="/dashboard" className="block w-full">
+                          <Button variant="outline" className="w-full font-bold h-12 border-[#8b2626]/40 text-[#8b2626] bg-[#f4ebe0] hover:bg-[#8b2626] hover:text-[#fffdf8] gap-2 font-serif-ar">
+                            <LayoutDashboard className="w-4 h-4" /> لوحة التحكم
+                          </Button>
+                        </Link>
+                      ) : (
+                        <Link href="/roadmap" className="block w-full">
+                          <Button className="w-full font-bold h-12 bg-[#8b2626] text-[#fffdf8] hover:bg-[#731b1b] gap-2 font-serif-ar">
+                            <Map className="w-4 h-4" /> مساري التعليمي
+                          </Button>
+                        </Link>
+                      )}
+                      <Button 
+                        onClick={logout}
+                        variant="ghost" 
+                        className="w-full font-bold h-11 text-red-700 hover:bg-red-50 gap-2 font-serif-ar"
+                      >
+                        <LogOut className="w-4 h-4" /> خروج
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </header>
